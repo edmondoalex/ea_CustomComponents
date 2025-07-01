@@ -1,0 +1,11 @@
+{
+  "domain": "dahua_event_listener",
+  "name": "Dahua Event Listener",
+  "version": "1.0.0",
+  "documentation": "https://www.example.com",
+  "dependencies": [],
+  "codeowners": ["@lucaed3001"],
+  "requirements": [],
+  "config_flow": true,
+  "logo": "custom_components/dahua_event_listener/icon.png"
+}
