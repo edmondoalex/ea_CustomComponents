@@ -7,27 +7,48 @@ from .const import DOMAIN
 from .coordinator import DahuaDataCoordinator, DahuaEntity
 
 SENSORS = [
-    ("code", "Codice Evento"),
-    ("action", "Azione Evento"),
-    ("temperature", "Temperatura"),
+    ("code", "Event Code"),
+    ("action", "Event Action"),
+    ("index", "Index"),
+    ("temperature", "Temperature"),
     ("latitude", "Latitudine"),
     ("longitude", "Longitudine"),
-    ("raw", "Dati Grezzi"),
+    ("action_data", "Action Data"),
+    ("direction", "Direction"),
+    ("name", "Rule Name"),
+    ("object_action", "Object Action"),
+    ("object_type", "Object Type"),
+    ("raw", "Raw Data"),
 ]
 
 
 def extract_value(data: dict, key: str):
     try:
+        event = data.get("data", {})
+        info = event.get("Info", [{}])[0] if "Info" in event else {}
+
         if key == "temperature":
-            return data.get("data", {}).get("Info", [{}])[0].get("Temperature")
+            return info.get("Temperature")
         elif key == "latitude":
-            lat = data.get("data", {}).get("Info", [{}])[0].get("GPS", {}).get("Latitude")
+            lat = info.get("GPS", {}).get("Latitude")
             return round(lat / 1e6, 6) if lat else None
         elif key == "longitude":
-            lon = data.get("data", {}).get("Info", [{}])[0].get("GPS", {}).get("Longitude")
+            lon = info.get("GPS", {}).get("Longitude")
             return round(lon / 1e6, 6) if lon else None
+        elif key == "action_data":
+            return event.get("Action")
+        elif key == "direction":
+            return event.get("Direction")
+        elif key == "name":
+            return event.get("Name")
+        elif key == "object_action":
+            return event.get("Object", {}).get("Action")
+        elif key == "object_type":
+            return event.get("Object", {}).get("ObjectType")
         elif key == "raw":
-            return str(data.get("data", {}))[:255]  # Evita errori di lunghezza
+            return str(event)[:255]
+        elif key == "index":
+            return data.get("index")
         else:
             return data.get(key)
     except Exception:

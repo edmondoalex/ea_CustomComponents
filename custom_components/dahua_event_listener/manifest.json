@@ -6,6 +6,5 @@
   "dependencies": [],
   "codeowners": ["@lucaed3001"],
   "requirements": [],
-  "config_flow": true,
-  "logo": "custom_components/dahua_event_listener/icon.png"
+  "config_flow": true
 }

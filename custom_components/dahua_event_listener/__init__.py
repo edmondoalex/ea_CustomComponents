@@ -37,16 +37,15 @@ def start_dahua_stream(hass: HomeAssistant, coordinator: DahuaDataCoordinator, u
                                     continue
 
                                 headers, body = block.split("data=", 1)
-
                                 data = json.loads(body.strip())
 
-                                # 🔍 Log dettagliato
-                                """"_LOGGER.debug("🔍 Dahua block:\n%s", block)
-                                _LOGGER.debug("🔹 Headers: %s", headers)"""
+                                _LOGGER.debug("🔍 Blocco ricevuto:\n%s", block)
+                                _LOGGER.debug("🔹 Headers: %s", headers)
                                 _LOGGER.debug("🔹 Body JSON:\n%s", json.dumps(data, indent=2))
 
                                 code = ""
                                 action = ""
+                                index = None
 
                                 header_lines = headers.strip().split("\n")[1:] if "Content-Length" in headers else headers.strip().split("\n")
 
@@ -56,9 +55,12 @@ def start_dahua_stream(hass: HomeAssistant, coordinator: DahuaDataCoordinator, u
                                             code = part.split("=", 1)[1]
                                         elif part.startswith("action="):
                                             action = part.split("=", 1)[1]
+                                        elif part.startswith("index="):
+                                            try:
+                                                index = int(part.split("=", 1)[1]) + 1
+                                            except ValueError:
+                                                index = None
 
-
-                                # fallback
                                 code = code or data.get("Event", "")
 
                                 if code == "RtspSessionDisconnect":
@@ -74,13 +76,14 @@ def start_dahua_stream(hass: HomeAssistant, coordinator: DahuaDataCoordinator, u
                                 coordinator_data = {
                                     "code": code,
                                     "action": action,
+                                    "index": index,
                                     "data": data,
                                     "temperature": temperature,
                                 }
 
                                 _LOGGER.info(
-                                    "📥 Evento ricevuto:\n🔸 Codice: %s\n🔸 Azione: %s\n🔸 Temperatura: %s",
-                                    code, action, temperature
+                                    "📥 Evento ricevuto:\n🔸 Codice: %s\n🔸 Azione: %s\n🔸 Indice: %s\n🔸 Temperatura: %s",
+                                    code, action, index, temperature
                                 )
 
                                 hass.loop.call_soon_threadsafe(
