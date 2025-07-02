@@ -1,7 +1,7 @@
 {
-  "name": "Dahua Integration",
+  "name": "Dahua Event Listener",
   "content_in_root": false,
-  "domains": ["sensor"], 
+  "domains": ["dahua_event_listener"],
   "country": "IT",
   "homeassistant": "2023.0.0",
   "render_readme": true,
