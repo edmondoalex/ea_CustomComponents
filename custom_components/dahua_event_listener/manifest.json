@@ -1,7 +1,7 @@
 {
   "domain": "dahua_event_listener",
   "name": "Dahua Integration",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "documentation": "https://www.example.com",
   "dependencies": [],
   "codeowners": ["@lucaed3001"],

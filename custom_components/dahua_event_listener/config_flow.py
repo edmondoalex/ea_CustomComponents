@@ -29,8 +29,10 @@ class DahuaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required("host"): str,
                 vol.Required("username"): str,
                 vol.Required("password"): str,
+                vol.Required("channels", default=1): vol.All(vol.Coerce(int), vol.Range(min=1, max=256))
             }),
         )
+
 
     @staticmethod
     @callback
