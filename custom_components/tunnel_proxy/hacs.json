@@ -1,8 +1,7 @@
 {
-  "name": "Dahua Event Listener",
+  "name": "Tunnel Proxy",
   "content_in_root": false,
-  "domains": ["dahua_event_listener"],
-  "country": "IT",
+  "domain": ["tunnel_proxy"],
   "homeassistant": "2023.0.0",
   "render_readme": true,
   "filename": "logo.png"

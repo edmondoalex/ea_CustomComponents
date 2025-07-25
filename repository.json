@@ -1,5 +1,5 @@
 {
-  "domains": ["dahua_event_listener", "tunnel_proxy"],
+  "domain": ["dahua_event_listener", "tunnel_proxy"],
   "plugins": [
     {
       "path": "custom_components/dahua_event_listener",
