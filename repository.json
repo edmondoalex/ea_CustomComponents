@@ -1,0 +1,13 @@
+{
+  "domains": ["dahua_event_listener", "tunnel_proxy"],
+  "plugins": [
+    {
+      "path": "custom_components/dahua_event_listener",
+      "type": "integration"
+    },
+    {
+      "path": "custom_components/tunnel_proxy",
+      "type": "integration"
+    }
+  ]
+}
