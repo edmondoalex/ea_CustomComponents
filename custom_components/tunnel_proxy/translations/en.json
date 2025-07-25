@@ -1,0 +1,20 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configurazione Server Tunnel",
+        "description": "Immetti il nome identificativo e l'URL del server",
+        "data": {
+          "name": "Nome",
+          "server_url": "URL Server"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Impossibile connettersi"
+    },
+    "abort": {
+      "already_configured": "Già configurato"
+    }
+  }
+}

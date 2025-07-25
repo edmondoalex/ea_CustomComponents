@@ -1,0 +1,11 @@
+{
+  "domain": "tunnel_proxy",
+  "name": "Tunnel Proxy",
+  "version": "1.0.0",
+  "documentation": "",
+  "platforms": ["sensor"],
+  "dependencies": [],
+  "codeowners": [],
+  "config_flow": true,
+  "requirements": ["requests"]
+}
