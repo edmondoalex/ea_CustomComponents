@@ -4,6 +4,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN
 from .coordinator import DahuaDataCoordinator, DahuaEntity
+from homeassistant.components.camera import CameraEntityFeature
 
 import requests
 from requests.auth import HTTPDigestAuth
@@ -56,7 +57,10 @@ class DahuaSnapshotCamera(DahuaEntity, Camera):
 
     @property
     def supported_features(self):
-        return 1
+        return CameraEntityFeature.STREAM
+
+    async def async_get_supported_features(self) -> int:
+        return self.supported_features
 
     @property
     def extra_state_attributes(self):
@@ -114,7 +118,11 @@ class DahuaStaticChannelCamera(DahuaEntity, Camera):
 
     @property
     def supported_features(self):
-        return 1
+        return CameraEntityFeature.STREAM
+
+    
+    async def async_get_supported_features(self) -> int:
+        return self.supported_features
 
     @property
     def extra_state_attributes(self):
