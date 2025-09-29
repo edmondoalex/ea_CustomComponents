@@ -28,7 +28,7 @@ class DahuaSnapshotCamera(DahuaEntity, Camera):
         self._password = password
         self._host = host
 
-    async def async_camera_image(self, width: int | None = None, height: int | None = None):
+    async def async_camera_image(self, *args, **kwargs):
         channel = self.coordinator.data.get("index") if self.coordinator.data else 1
         snapshot_url = f"http://{self._host}/cgi-bin/snapshot.cgi?channel={channel}&stream=0"
 
@@ -52,9 +52,12 @@ class DahuaSnapshotCamera(DahuaEntity, Camera):
         return self._attr_name
 
     @property
-    def supported_features(self) -> int:
-        # Non dichiariamo lo streaming: questa entity fornisce solo snapshot.
-        return 0
+    def is_streaming(self):
+        return True
+
+    @property
+    def supported_features(self):
+        return CameraEntityFeature.STREAM
 
     async def async_get_supported_features(self) -> int:
         return self.supported_features
@@ -87,7 +90,7 @@ class DahuaStaticChannelCamera(DahuaEntity, Camera):
         self._host = host
         self._channel = channel
 
-    async def async_camera_image(self, width: int | None = None, height: int | None = None):
+    async def async_camera_image(self, *args, **kwargs):
         snapshot_url = f"http://{self._host}/cgi-bin/snapshot.cgi?channel={self._channel}&stream=0"
 
         def fetch_snapshot():
@@ -110,10 +113,14 @@ class DahuaStaticChannelCamera(DahuaEntity, Camera):
         return self._attr_name
 
     @property
-    def supported_features(self) -> int:
-        # Non dichiariamo lo streaming: questa entity fornisce solo snapshot.
-        return 0
+    def is_streaming(self):
+        return True
 
+    @property
+    def supported_features(self):
+        return CameraEntityFeature.STREAM
+
+    
     async def async_get_supported_features(self) -> int:
         return self.supported_features
 
