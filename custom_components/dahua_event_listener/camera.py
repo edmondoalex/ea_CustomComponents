@@ -42,7 +42,7 @@ class DahuaSnapshotCamera(DahuaEntity, Camera):
                 if response.status_code == 200:
                     return response.content
             except Exception as e:
-                self._logger.error("❌ Errore snapshot (evento index): %s", e)
+                self._logger.error("Errore snapshot (evento index): %s", e)
             return None
 
         return await self.hass.async_add_executor_job(fetch_snapshot)
@@ -103,7 +103,7 @@ class DahuaStaticChannelCamera(DahuaEntity, Camera):
                 if response.status_code == 200:
                     return response.content
             except Exception as e:
-                self._logger.error("❌ Errore snapshot canale %s: %s", self._channel, e)
+                self._logger.error("Errore snapshot canale %s: %s", self._channel, e)
             return None
 
         return await self.hass.async_add_executor_job(fetch_snapshot)
@@ -147,7 +147,7 @@ async def async_setup_entry(
 
     entities = []
 
-    # 📸 Entità dinamica basata su ultimo evento
+    # Entita dinamica basata su ultimo evento
     entities.append(
         DahuaSnapshotCamera(
             coordinator=coordinator,
@@ -160,7 +160,7 @@ async def async_setup_entry(
         )
     )
 
-    # 📸 Entità statiche per ogni canale
+    # Entita statiche per ogni canale
     for ch in range(1, num_channels + 1):
         entities.append(
             DahuaStaticChannelCamera(

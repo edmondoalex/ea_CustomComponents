@@ -47,4 +47,16 @@ class DahuaOptionsFlowHandler(config_entries.OptionsFlow):
         self.config_entry = config_entry
 
     async def async_step_init(self, user_input=None):
-        return self.async_create_entry(title="", data={})
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        options = self.config_entry.options
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema({
+                vol.Optional("connect_timeout", default=options.get("connect_timeout", 10)): vol.All(vol.Coerce(int), vol.Range(min=5, max=120)),
+                vol.Optional("read_timeout", default=options.get("read_timeout", 60)): vol.All(vol.Coerce(int), vol.Range(min=5, max=300)),
+                vol.Optional("idle_reconnect_seconds", default=options.get("idle_reconnect_seconds", 120)): vol.All(vol.Coerce(int), vol.Range(min=30, max=600)),
+                vol.Optional("reconnect_delay", default=options.get("reconnect_delay", 5)): vol.All(vol.Coerce(int), vol.Range(min=1, max=60)),
+            }),
+        )
