@@ -37,7 +37,7 @@ class DahuaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @staticmethod
     @callback
     def async_get_options_flow(config_entry):
-        return DahuaOptionsFlowHandler(config_entry)
+        return DahuaOptionsFlowHandler()
 
 
 class DahuaOptionsFlowHandler(config_entries.OptionsFlow):
