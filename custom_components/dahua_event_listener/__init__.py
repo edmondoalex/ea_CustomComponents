@@ -1,6 +1,7 @@
 import logging
 import json
 import time
+import random
 import threading
 import requests
 from requests.auth import HTTPDigestAuth
@@ -33,6 +34,7 @@ def start_dahua_stream(
     connect_timeout = max(5, int(connect_timeout))
     idle_reconnect_seconds = max(30, int(idle_reconnect_seconds))
 
+    consecutive_failures = 0
     while not stop_event.is_set():
         try:
             _LOGGER.info("Connessione stream Dahua: %s", url)
@@ -44,6 +46,7 @@ def start_dahua_stream(
             ) as response:
                 buffer = []
                 last_data_ts = time.monotonic()
+                last_useful_ts = time.monotonic()
 
                 for line_bytes in response.iter_lines():
                     if stop_event.is_set():
@@ -125,6 +128,7 @@ def start_dahua_stream(
                                     code, action, index, temperature
                                 )
 
+                                last_useful_ts = time.monotonic()
                                 hass.loop.call_soon_threadsafe(
                                     coordinator.async_set_updated_data,
                                     coordinator_data
@@ -135,15 +139,26 @@ def start_dahua_stream(
                     else:
                         buffer.append(line)
 
+                    if time.monotonic() - last_useful_ts > (idle_reconnect_seconds * 3):
+                        _LOGGER.warning("Eventi non utili da %ss, reconnessione stream", idle_reconnect_seconds * 3)
+                        break
+
         except requests.exceptions.ReadTimeout:
             _LOGGER.warning("Timeout lettura stream Dahua, riconnessione")
+            consecutive_failures += 1
         except requests.exceptions.RequestException as e:
             _LOGGER.warning("Errore connessione stream Dahua: %s", e)
+            consecutive_failures += 1
         except Exception as e:
             _LOGGER.exception("Errore stream Dahua: %s", e)
+            consecutive_failures += 1
+        else:
+            consecutive_failures = 0
 
         if not stop_event.is_set():
-            time.sleep(reconnect_delay)
+            backoff = min(60, reconnect_delay + (2 * consecutive_failures))
+            jitter = random.uniform(0, 1.5)
+            time.sleep(backoff + jitter)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
