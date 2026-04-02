@@ -68,15 +68,18 @@ def start_dahua_stream(
 
                             try:
                                 if "data=" not in block:
-                                    _LOGGER.warning("Nessun campo 'data=' nel blocco ricevuto:\n%s", block)
-                                    continue
-
-                                headers, body = block.split("data=", 1)
-                                data = json.loads(body.strip())
+                                    # Alcuni Dahua inviano eventi senza payload JSON.
+                                    # In questo caso estraiamo almeno Code/action/index dagli header.
+                                    headers = block
+                                    data = {}
+                                else:
+                                    headers, body = block.split("data=", 1)
+                                    data = json.loads(body.strip())
 
                                 _LOGGER.debug("Blocco ricevuto:\n%s", block)
                                 _LOGGER.debug("Headers: %s", headers)
-                                _LOGGER.debug("Body JSON:\n%s", json.dumps(data, indent=2))
+                                if data:
+                                    _LOGGER.debug("Body JSON:\n%s", json.dumps(data, indent=2))
 
                                 code = ""
                                 action = ""
@@ -102,11 +105,12 @@ def start_dahua_stream(
                                     continue
 
                                 temperature = None
-                                try:
-                                    info = data.get("Info", [{}])[0]
-                                    temperature = info.get("Temperature")
-                                except Exception as ex:
-                                    _LOGGER.debug("âš ï¸ Nessuna temperatura o parsing fallito: %s", ex)
+                                if data:
+                                    try:
+                                        info = data.get("Info", [{}])[0]
+                                        temperature = info.get("Temperature")
+                                    except Exception as ex:
+                                        _LOGGER.debug("Nessuna temperatura o parsing fallito: %s", ex)
 
                                 coordinator_data = {
                                     "code": code,
