@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [1.4.3] - 2026-09-17
+- Corretto il filtro Rule: foto e numero camera richiedono ora `RuleId`/`RuleID`, evitando che eventi `VideoMotion` con campo `Name` sovrascrivano l'ultima Rule reale.
+
 ## [1.4.2] - 2026-09-17
 - Nuova release HACS versionata, successiva alla precedente installazione basata sul commit Git.
 

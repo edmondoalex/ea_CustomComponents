@@ -1,6 +1,6 @@
 # Dahua Event Listener
 
-**Versione componente: 1.4.2**
+**Versione componente: 1.4.3**
 
 ![Logo](logo.png)
 
@@ -12,7 +12,7 @@ Integrazione Home Assistant per ricevere eventi dai dispositivi Dahua (NVR/DVR/c
 - I sensori leggono gli ultimi dati evento.
 - Le camere forniscono snapshot: una camera dinamica sull'ultimo canale evento e una camera statica per ogni canale.
 - La camera dinamica `Ultimo Evento` segue l'ultimo evento Dahua ricevuto.
-- La camera separata `Ultima Regola` conserva esclusivamente la foto di una regola valida con azione `Start`.
+- La camera separata `Ultima Regola` conserva esclusivamente la foto di una regola Dahua con `RuleId` e azione `Start`, ignorando `VideoMotion` e gli altri eventi con un semplice campo `Name`.
 - Dopo la cattura viene emesso l'evento Home Assistant `dahua_event_listener_rule_snapshot`.
 - Lo stream ha reconnect automatico e watchdog in caso di silenzio prolungato.
 
