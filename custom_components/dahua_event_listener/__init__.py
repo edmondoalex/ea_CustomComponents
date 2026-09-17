@@ -123,16 +123,67 @@ def start_dahua_stream(
                                     "temperature": temperature,
                                 }
 
+                                # Acquisisce subito la foto del canale che ha generato
+                                # una regola. La camera dinamica potra' così restituire
+                                # esattamente questa immagine anche se, nel frattempo,
+                                # arriva un evento da un altro canale.
+                                rule_name = data.get("Name") if data else None
+                                normalized_rule = str(rule_name).strip().lower() if rule_name is not None else ""
+                                invalid_rules = {"", "unknown", "sconosciuta", "sconosciuto", "unavailable", "none"}
+                                snapshot = None
+                                if (
+                                    normalized_rule not in invalid_rules
+                                    and index is not None
+                                    and str(action).strip().lower() == "start"
+                                ):
+                                    snapshot_url = f"http://{url.split('/')[2]}/cgi-bin/snapshot.cgi?channel={index}&stream=0"
+                                    try:
+                                        snapshot_response = requests.get(
+                                            snapshot_url,
+                                            auth=HTTPDigestAuth(username, password),
+                                            timeout=(connect_timeout, 10),
+                                        )
+                                        if snapshot_response.status_code == 200:
+                                            snapshot = snapshot_response.content
+                                        else:
+                                            _LOGGER.warning(
+                                                "Snapshot regola %s canale %s fallito: HTTP %s",
+                                                rule_name, index, snapshot_response.status_code,
+                                            )
+                                    except requests.exceptions.RequestException as ex:
+                                        _LOGGER.warning(
+                                            "Snapshot regola %s canale %s fallito: %s",
+                                            rule_name, index, ex,
+                                        )
+
                                 _LOGGER.info(
                                     "Evento ricevuto: codice=%s azione=%s indice=%s temperatura=%s",
                                     code, action, index, temperature
                                 )
 
                                 last_useful_ts = time.monotonic()
-                                hass.loop.call_soon_threadsafe(
-                                    coordinator.async_set_updated_data,
-                                    coordinator_data
-                                )
+                                def publish_event(
+                                    event_data=coordinator_data,
+                                    image=snapshot,
+                                    rule=rule_name,
+                                    channel=index,
+                                ):
+                                    if image is not None:
+                                        snapshot_info = {
+                                            "rule_name": rule,
+                                            "channel": channel,
+                                            "code": event_data["code"],
+                                            "action": event_data["action"],
+                                            "captured_at": time.time(),
+                                        }
+                                        coordinator.set_rule_snapshot(image, snapshot_info)
+                                        hass.bus.async_fire(
+                                            f"{DOMAIN}_rule_snapshot",
+                                            snapshot_info,
+                                        )
+                                    coordinator.async_set_updated_data(event_data)
+
+                                hass.loop.call_soon_threadsafe(publish_event)
 
                             except Exception as e:
                                 _LOGGER.exception("Errore parsing evento Dahua: %s", e)

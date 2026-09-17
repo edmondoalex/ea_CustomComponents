@@ -9,6 +9,8 @@ Integrazione Home Assistant per ricevere eventi dai dispositivi Dahua (NVR/DVR/c
 - Ogni evento ricevuto viene parsato e salvato nel coordinator.
 - I sensori leggono gli ultimi dati evento.
 - Le camere forniscono snapshot: una camera dinamica sull'ultimo canale evento e una camera statica per ogni canale.
+- Quando arriva una regola valida con azione `Start`, la camera dinamica conserva immediatamente la foto del canale che ha generato l'evento.
+- Dopo la cattura viene emesso l'evento Home Assistant `dahua_event_listener_rule_snapshot`.
 - Lo stream ha reconnect automatico e watchdog in caso di silenzio prolungato.
 
 ## Installazione (HACS)

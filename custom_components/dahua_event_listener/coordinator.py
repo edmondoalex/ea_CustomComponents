@@ -23,6 +23,13 @@ class DahuaDataCoordinator(DataUpdateCoordinator[dict]):
             name=f"{DOMAIN}_{entry_id}",
         )
         self.entry_id = entry_id
+        self.last_rule_snapshot: Optional[bytes] = None
+        self.last_rule_snapshot_info: dict[str, Any] = {}
+
+    def set_rule_snapshot(self, image: bytes, info: dict[str, Any]) -> None:
+        """Conserva lo snapshot acquisito al momento dell'evento regola."""
+        self.last_rule_snapshot = image
+        self.last_rule_snapshot_info = info
 
     async def _async_update_data(self) -> dict:
         return self.data if hasattr(self, "data") else {}
