@@ -28,12 +28,6 @@ class DahuaSnapshotCamera(DahuaEntity, Camera):
         self._host = host
 
     async def async_camera_image(self, *args, **kwargs):
-        # Se una regola valida ha appena generato un evento, restituisce la foto
-        # catturata in quel preciso momento e non un nuovo snapshot potenzialmente
-        # appartenente a un evento successivo.
-        if self.coordinator.last_rule_snapshot is not None:
-            return self.coordinator.last_rule_snapshot
-
         channel = self.coordinator.data.get("index") if self.coordinator.data else 1
         snapshot_url = f"http://{self._host}/cgi-bin/snapshot.cgi?channel={channel}&stream=0"
 
@@ -70,11 +64,25 @@ class DahuaSnapshotCamera(DahuaEntity, Camera):
     @property
     def extra_state_attributes(self):
         data = self.coordinator.data
+        return {
+            "Ultimo canale attivo": data.get("index") if data else "N/D"
+        }
+
+
+class DahuaRuleSnapshotCamera(DahuaSnapshotCamera):
+    """Foto memorizzata esclusivamente all'avvio di una regola valida."""
+
+    async def async_camera_image(self, *args, **kwargs):
+        return self.coordinator.last_rule_snapshot
+
+    @property
+    def extra_state_attributes(self):
         snapshot_info = self.coordinator.last_rule_snapshot_info
         return {
-            "Ultimo canale attivo": data.get("index") if data else "N/D",
             "Ultima regola fotografata": snapshot_info.get("rule_name", "N/D"),
             "Canale ultima foto": snapshot_info.get("channel", "N/D"),
+            "Codice evento": snapshot_info.get("code", "N/D"),
+            "Azione evento": snapshot_info.get("action", "N/D"),
             "Data ultima foto": snapshot_info.get("captured_at"),
         }
 
@@ -162,6 +170,19 @@ async def async_setup_entry(
             entry_id=entry.entry_id,
             name=f"{name} (Ultimo Evento)",
             unique_id=f"{entry.entry_id}_camera_event",
+            username=user,
+            password=pwd,
+            host=host
+        )
+    )
+
+    # Entita' separata aggiornata soltanto da regole valide con action=Start.
+    entities.append(
+        DahuaRuleSnapshotCamera(
+            coordinator=coordinator,
+            entry_id=entry.entry_id,
+            name=f"{name} (Ultima Regola)",
+            unique_id=f"{entry.entry_id}_camera_rule",
             username=user,
             password=pwd,
             host=host

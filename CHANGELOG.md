@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-09-17
+- Aggiunta la camera `Ultima Regola`, aggiornata esclusivamente da regole valide con azione `Start`.
+- Ripristinata la camera `Ultimo Evento` per tutti gli eventi Dahua, separandola dalla nuova entita filtrata.
+
 ## [1.3.4] - 2026-09-17
 - Spostati icona e logo nella cartella `brand/` richiesta da Home Assistant per la visualizzazione nell'interfaccia.
 
