@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [1.4.2] - 2026-09-17
+- Nuova release HACS versionata, successiva alla precedente installazione basata sul commit Git.
+
 ## [1.4.1] - 2026-09-17
 - Aggiunto il sensore `Ultimo Evento Numero Camera` con il canale dell'ultima Rule valida con azione `Start`.
 
