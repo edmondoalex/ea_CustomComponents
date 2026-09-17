@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-09-17
+- Aggiunto il logo del progetto al pacchetto del componente.
+
 ## [1.3.1] - 2026-09-17
 - La camera dinamica `Ultimo Evento` conserva lo snapshot acquisito all'arrivo di una regola valida con azione `Start`.
 - Aggiunto l'evento Home Assistant `dahua_event_listener_rule_snapshot` con regola, canale, codice, azione e data di acquisizione.
