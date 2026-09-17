@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [1.3.3] - 2026-09-17
+- Mostrata chiaramente nel README HACS la versione del componente installato.
+
 ## [1.3.2] - 2026-09-17
 - Aggiunto il logo del progetto al pacchetto del componente.
 

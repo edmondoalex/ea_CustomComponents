@@ -1,5 +1,7 @@
 # Dahua Event Listener
 
+**Versione componente: 1.3.3**
+
 ![Logo](logo.png)
 
 Integrazione Home Assistant per ricevere eventi dai dispositivi Dahua (NVR/DVR/camere) tramite `eventManager.cgi` e creare sensori e camere snapshot.
