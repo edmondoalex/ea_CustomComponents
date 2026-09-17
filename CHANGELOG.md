@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-09-17
+- Aggiunto il sensore `Ultimo Evento Numero Camera` con il canale dell'ultima Rule valida con azione `Start`.
+
 ## [1.4.0] - 2026-09-17
 - Aggiunta la camera `Ultima Regola`, aggiornata esclusivamente da regole valide con azione `Start`.
 - Ripristinata la camera `Ultimo Evento` per tutti gli eventi Dahua, separandola dalla nuova entita filtrata.

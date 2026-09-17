@@ -65,6 +65,13 @@ async def async_setup_entry(
         DahuaSensor(coordinator, entry.entry_id, key, f"{name_prefix} {name}")
         for key, name in SENSORS
     ]
+    entities.append(
+        DahuaLastRuleChannelSensor(
+            coordinator,
+            entry.entry_id,
+            f"{name_prefix} Ultimo Evento Numero Camera",
+        )
+    )
     async_add_entities(entities)
 
 
@@ -77,3 +84,24 @@ class DahuaSensor(DahuaEntity, SensorEntity):
     @property
     def native_value(self):
         return extract_value(self.coordinator.data, self._key)
+
+
+class DahuaLastRuleChannelSensor(DahuaEntity, SensorEntity):
+    """Numero del canale che ha generato l'ultima regola Start valida."""
+
+    def __init__(self, coordinator: DahuaDataCoordinator, entry_id: str, name: str):
+        super().__init__(
+            coordinator,
+            entry_id,
+            name,
+            f"{entry_id}_last_rule_camera_number",
+        )
+        self._attr_icon = "mdi:cctv"
+
+    @property
+    def native_value(self):
+        return self.coordinator.last_rule_event_info.get("channel")
+
+    @property
+    def extra_state_attributes(self):
+        return self.coordinator.last_rule_event_info or {}

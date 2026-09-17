@@ -25,6 +25,11 @@ class DahuaDataCoordinator(DataUpdateCoordinator[dict]):
         self.entry_id = entry_id
         self.last_rule_snapshot: Optional[bytes] = None
         self.last_rule_snapshot_info: dict[str, Any] = {}
+        self.last_rule_event_info: dict[str, Any] = {}
+
+    def set_rule_event(self, info: dict[str, Any]) -> None:
+        """Conserva i dati dell'ultima regola valida ricevuta."""
+        self.last_rule_event_info = info
 
     def set_rule_snapshot(self, image: bytes, info: dict[str, Any]) -> None:
         """Conserva lo snapshot acquisito al momento dell'evento regola."""

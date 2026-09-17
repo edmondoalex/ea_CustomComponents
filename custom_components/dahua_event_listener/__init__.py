@@ -131,11 +131,12 @@ def start_dahua_stream(
                                 normalized_rule = str(rule_name).strip().lower() if rule_name is not None else ""
                                 invalid_rules = {"", "unknown", "sconosciuta", "sconosciuto", "unavailable", "none"}
                                 snapshot = None
-                                if (
+                                is_rule_start = (
                                     normalized_rule not in invalid_rules
                                     and index is not None
                                     and str(action).strip().lower() == "start"
-                                ):
+                                )
+                                if is_rule_start:
                                     snapshot_url = f"http://{url.split('/')[2]}/cgi-bin/snapshot.cgi?channel={index}&stream=0"
                                     try:
                                         snapshot_response = requests.get(
@@ -167,19 +168,22 @@ def start_dahua_stream(
                                     image=snapshot,
                                     rule=rule_name,
                                     channel=index,
+                                    rule_start=is_rule_start,
                                 ):
+                                    rule_info = {
+                                        "rule_name": rule,
+                                        "channel": channel,
+                                        "code": event_data["code"],
+                                        "action": event_data["action"],
+                                        "captured_at": time.time(),
+                                    }
+                                    if rule_start:
+                                        coordinator.set_rule_event(rule_info)
                                     if image is not None:
-                                        snapshot_info = {
-                                            "rule_name": rule,
-                                            "channel": channel,
-                                            "code": event_data["code"],
-                                            "action": event_data["action"],
-                                            "captured_at": time.time(),
-                                        }
-                                        coordinator.set_rule_snapshot(image, snapshot_info)
+                                        coordinator.set_rule_snapshot(image, rule_info)
                                         hass.bus.async_fire(
                                             f"{DOMAIN}_rule_snapshot",
-                                            snapshot_info,
+                                            rule_info,
                                         )
                                     coordinator.async_set_updated_data(event_data)
 
