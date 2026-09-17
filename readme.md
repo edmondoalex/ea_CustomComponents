@@ -1,10 +1,14 @@
 # Dahua Event Listener
 
-**Versione componente: 1.4.4**
+**Versione componente: 1.4.5**
 
 ![Logo](logo.png)
 
 Integrazione Home Assistant per ricevere eventi dai dispositivi Dahua (NVR/DVR/camere) tramite `eventManager.cgi` e creare sensori e camere snapshot.
+
+[![Roadmap: RTSP e registrazioni](https://img.shields.io/badge/roadmap-RTSP%20e%20registrazioni-5319e7)](https://github.com/edmondoalex/ea_CustomComponents/issues/1)
+
+> **Sviluppo futuro:** è in valutazione l'integrazione di streaming RTSP, Media Browser e riproduzione delle registrazioni NVR. Il progetto [Constantini21/intelbras_dvr](https://github.com/Constantini21/intelbras_dvr) è stato registrato come riferimento tecnico. Consulta la [roadmap completa](ROADMAP.md) e la [issue di progetto](https://github.com/edmondoalex/ea_CustomComponents/issues/1). Queste funzioni non sono ancora incluse.
 
 ## Funzionamento
 - L'integrazione apre uno stream HTTP verso il dispositivo Dahua: `eventManager.cgi?action=attach&codes=[All]&heartbeat=5`.
@@ -71,6 +75,10 @@ Puoi modificare:
 ## Note importanti
 - Le camere sono snapshot, non stream RTSP.
 - Per applicare modifiche alle opzioni, ricarica l'integrazione o riavvia Home Assistant.
+
+## Roadmap
+
+Le evoluzioni video prese in considerazione comprendono live RTSP, scelta main stream/substream, registrazioni nel Media Browser e collegamento tra Rule e registrazione dello stesso canale/orario. Dettagli, vincoli e fonte di riferimento sono raccolti in [ROADMAP.md](ROADMAP.md).
 
 ## Troubleshooting
 ### L'evento si blocca dopo 1-2 giorni

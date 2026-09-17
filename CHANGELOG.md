@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.4.5] - 2026-09-17
+- Aggiunta una roadmap pubblica per la possibile integrazione futura di RTSP e registrazioni NVR.
+- Collegato `Constantini21/intelbras_dvr` come progetto tecnico di riferimento, senza introdurre dipendenze o funzionalità non ancora implementate.
+
 ## [1.4.4] - 2026-09-17
 - Aggiunto il sensore `Ultimo Evento Regola Name`, che conserva il nome dell'ultima Rule valida con azione `Start`.
 - Aggiunto il sensore `Ultimo Evento Rule Nome Camera`, associando i nomi ricevuti dagli eventi `VideoMotion` al canale dell'ultima Rule.
