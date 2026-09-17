@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.4.4] - 2026-09-17
+- Aggiunto il sensore `Ultimo Evento Regola Name`, che conserva il nome dell'ultima Rule valida con azione `Start`.
+- Aggiunto il sensore `Ultimo Evento Rule Nome Camera`, associando i nomi ricevuti dagli eventi `VideoMotion` al canale dell'ultima Rule.
+
 ## [1.4.3] - 2026-09-17
 - Corretto il filtro Rule: foto e numero camera richiedono ora `RuleId`/`RuleID`, evitando che eventi `VideoMotion` con campo `Name` sovrascrivano l'ultima Rule reale.
 

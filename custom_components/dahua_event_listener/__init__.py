@@ -134,9 +134,10 @@ def start_dahua_stream(
                                 )
                                 normalized_rule = str(rule_name).strip().lower() if rule_name is not None else ""
                                 invalid_rules = {"", "unknown", "sconosciuta", "sconosciuto", "unavailable", "none"}
+                                valid_name = normalized_rule not in invalid_rules
                                 snapshot = None
                                 is_rule_start = (
-                                    normalized_rule not in invalid_rules
+                                    valid_name
                                     and rule_id is not None
                                     and index is not None
                                     and str(action).strip().lower() == "start"
@@ -175,7 +176,16 @@ def start_dahua_stream(
                                     channel=index,
                                     rule_start=is_rule_start,
                                     event_rule_id=rule_id,
+                                    event_code=code,
+                                    event_name_valid=valid_name,
                                 ):
+                                    if (
+                                        event_code == "VideoMotion"
+                                        and channel is not None
+                                        and event_name_valid
+                                    ):
+                                        coordinator.set_camera_name(channel, str(rule))
+
                                     rule_info = {
                                         "rule_name": rule,
                                         "rule_id": event_rule_id,

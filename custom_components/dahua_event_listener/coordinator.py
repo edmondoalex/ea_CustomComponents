@@ -26,6 +26,11 @@ class DahuaDataCoordinator(DataUpdateCoordinator[dict]):
         self.last_rule_snapshot: Optional[bytes] = None
         self.last_rule_snapshot_info: dict[str, Any] = {}
         self.last_rule_event_info: dict[str, Any] = {}
+        self.camera_names: dict[int, str] = {}
+
+    def set_camera_name(self, channel: int, name: str) -> None:
+        """Memorizza il nome NVR osservato per un canale."""
+        self.camera_names[channel] = name
 
     def set_rule_event(self, info: dict[str, Any]) -> None:
         """Conserva i dati dell'ultima regola valida ricevuta."""

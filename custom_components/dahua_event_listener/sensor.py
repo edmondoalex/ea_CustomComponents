@@ -72,6 +72,20 @@ async def async_setup_entry(
             f"{name_prefix} Ultimo Evento Numero Camera",
         )
     )
+    entities.append(
+        DahuaLastRuleNameSensor(
+            coordinator,
+            entry.entry_id,
+            f"{name_prefix} Ultimo Evento Regola Name",
+        )
+    )
+    entities.append(
+        DahuaLastRuleCameraNameSensor(
+            coordinator,
+            entry.entry_id,
+            f"{name_prefix} Ultimo Evento Rule Nome Camera",
+        )
+    )
     async_add_entities(entities)
 
 
@@ -105,3 +119,49 @@ class DahuaLastRuleChannelSensor(DahuaEntity, SensorEntity):
     @property
     def extra_state_attributes(self):
         return self.coordinator.last_rule_event_info or {}
+
+
+class DahuaLastRuleNameSensor(DahuaEntity, SensorEntity):
+    """Nome dell'ultima regola Start valida ricevuta."""
+
+    def __init__(self, coordinator: DahuaDataCoordinator, entry_id: str, name: str):
+        super().__init__(
+            coordinator,
+            entry_id,
+            name,
+            f"{entry_id}_last_rule_name",
+        )
+        self._attr_icon = "mdi:motion-sensor"
+
+    @property
+    def native_value(self):
+        return self.coordinator.last_rule_event_info.get("rule_name")
+
+    @property
+    def extra_state_attributes(self):
+        return self.coordinator.last_rule_event_info or {}
+
+
+class DahuaLastRuleCameraNameSensor(DahuaEntity, SensorEntity):
+    """Nome NVR della camera che ha generato l'ultima regola valida."""
+
+    def __init__(self, coordinator: DahuaDataCoordinator, entry_id: str, name: str):
+        super().__init__(
+            coordinator,
+            entry_id,
+            name,
+            f"{entry_id}_last_rule_camera_name",
+        )
+        self._attr_icon = "mdi:cctv"
+
+    @property
+    def native_value(self):
+        channel = self.coordinator.last_rule_event_info.get("channel")
+        return self.coordinator.camera_names.get(channel)
+
+    @property
+    def extra_state_attributes(self):
+        info = dict(self.coordinator.last_rule_event_info or {})
+        channel = info.get("channel")
+        info["camera_name"] = self.coordinator.camera_names.get(channel)
+        return info

@@ -1,6 +1,6 @@
 # Dahua Event Listener
 
-**Versione componente: 1.4.3**
+**Versione componente: 1.4.4**
 
 ![Logo](logo.png)
 
@@ -60,6 +60,8 @@ Puoi modificare:
 - Object Type
 - Raw Data
 - Ultimo Evento Numero Camera (canale dell'ultima Rule valida con azione `Start`)
+- Ultimo Evento Regola Name (nome dell'ultima Rule valida con azione `Start`)
+- Ultimo Evento Rule Nome Camera (nome NVR appreso per il canale dell'ultima Rule valida)
 
 ### Camere
 - Camera dinamica (ultimo evento)
