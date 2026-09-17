@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [1.3.4] - 2026-09-17
+- Spostati icona e logo nella cartella `brand/` richiesta da Home Assistant per la visualizzazione nell'interfaccia.
+
 ## [1.3.3] - 2026-09-17
 - Mostrata chiaramente nel README HACS la versione del componente installato.
 
