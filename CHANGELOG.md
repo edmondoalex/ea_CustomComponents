@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [1.4.7] - 2026-09-18
+- Ripristinata l'implementazione snapshot stabile dopo la regressione introdotta nella versione 1.4.6.
+
 ## [1.4.5] - 2026-09-17
 - Aggiunta una roadmap pubblica per la possibile integrazione futura di RTSP e registrazioni NVR.
 - Collegato `Constantini21/intelbras_dvr` come progetto tecnico di riferimento, senza introdurre dipendenze o funzionalità non ancora implementate.
