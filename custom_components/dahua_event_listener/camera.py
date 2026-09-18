@@ -2,6 +2,8 @@ from homeassistant.components.camera import Camera, CameraEntityFeature
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from urllib.parse import quote
+
 from .const import DOMAIN
 from .coordinator import DahuaDataCoordinator, DahuaEntity
 
@@ -98,7 +100,10 @@ class DahuaStaticChannelCamera(DahuaEntity, Camera):
         username: str,
         password: str,
         host: str,
-        channel: int
+        channel: int,
+        rtsp_port: int,
+        rtsp_subtype: int,
+        use_rtsp_for_stills: bool,
     ):
         Camera.__init__(self)
         DahuaEntity.__init__(self, coordinator, entry_id, name, unique_id)
@@ -106,6 +111,9 @@ class DahuaStaticChannelCamera(DahuaEntity, Camera):
         self._password = password
         self._host = host
         self._channel = channel
+        self._rtsp_port = rtsp_port
+        self._rtsp_subtype = rtsp_subtype
+        self._use_rtsp_for_stills = use_rtsp_for_stills
 
     async def async_camera_image(self, *args, **kwargs):
         snapshot_url = f"http://{self._host}/cgi-bin/snapshot.cgi?channel={self._channel}&stream=0"
@@ -135,16 +143,49 @@ class DahuaStaticChannelCamera(DahuaEntity, Camera):
 
     @property
     def supported_features(self):
-        return CameraEntityFeature(0)
+        return CameraEntityFeature.STREAM
+
+    @property
+    def use_stream_for_stills(self) -> bool:
+        """Usa RTSP per le immagini solo sui canali configurati."""
+        return self._use_rtsp_for_stills
 
     async def async_get_supported_features(self) -> int:
         return self.supported_features
 
+    async def stream_source(self) -> str:
+        """Restituisce il flusso RTSP del canale."""
+        username = quote(self._username, safe="")
+        password = quote(self._password, safe="")
+        return (
+            f"rtsp://{username}:{password}@{self._host}:{self._rtsp_port}"
+            f"/cam/realmonitor?channel={self._channel}"
+            f"&subtype={self._rtsp_subtype}"
+        )
+
     @property
     def extra_state_attributes(self):
         return {
-            "Canale fisso": self._channel
+            "Canale fisso": self._channel,
+            "RTSP per snapshot": self._use_rtsp_for_stills,
+            "RTSP subtype": self._rtsp_subtype,
         }
+
+
+def parse_channel_list(value: str, max_channel: int) -> set[int]:
+    """Converte una lista tipo '7,14' in un insieme di canali validi."""
+    channels = set()
+    for item in str(value or "").split(","):
+        item = item.strip()
+        if not item:
+            continue
+        try:
+            channel = int(item)
+        except ValueError:
+            continue
+        if 1 <= channel <= max_channel:
+            channels.add(channel)
+    return channels
 
 
 async def async_setup_entry(
@@ -160,6 +201,16 @@ async def async_setup_entry(
     user = data["username"]
     pwd = data["password"]
     num_channels = data.get("channels", 1)  # valore aggiunto in config_flow.py
+    options = entry.options or {}
+    rtsp_port = int(options.get("rtsp_port", data.get("rtsp_port", 554)))
+    rtsp_subtype = int(options.get("rtsp_subtype", data.get("rtsp_subtype", 0)))
+    rtsp_snapshot_channels = parse_channel_list(
+        options.get(
+            "rtsp_snapshot_channels",
+            data.get("rtsp_snapshot_channels", ""),
+        ),
+        num_channels,
+    )
 
     entities = []
 
@@ -200,7 +251,10 @@ async def async_setup_entry(
                 username=user,
                 password=pwd,
                 host=host,
-                channel=ch
+                channel=ch,
+                rtsp_port=rtsp_port,
+                rtsp_subtype=rtsp_subtype,
+                use_rtsp_for_stills=ch in rtsp_snapshot_channels,
             )
         )
 

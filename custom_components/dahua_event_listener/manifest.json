@@ -1,9 +1,9 @@
 {
   "domain": "dahua_event_listener",
   "name": "Dahua Integration",
-  "version": "1.4.7",
+  "version": "1.5.0",
   "documentation": "https://www.example.com",
-  "dependencies": [],
+  "dependencies": ["stream"],
   "codeowners": ["@lucaed3001"],
   "requirements": [],
   "config_flow": true

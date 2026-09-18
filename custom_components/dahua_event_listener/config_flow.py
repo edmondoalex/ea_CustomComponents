@@ -29,7 +29,10 @@ class DahuaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required("host"): str,
                 vol.Required("username"): str,
                 vol.Required("password"): str,
-                vol.Required("channels", default=1): vol.All(vol.Coerce(int), vol.Range(min=1, max=256))
+                vol.Required("channels", default=1): vol.All(vol.Coerce(int), vol.Range(min=1, max=256)),
+                vol.Optional("rtsp_port", default=554): vol.All(vol.Coerce(int), vol.Range(min=1, max=65535)),
+                vol.Optional("rtsp_subtype", default=0): vol.In([0, 1]),
+                vol.Optional("rtsp_snapshot_channels", default=""): str,
             }),
         )
 
@@ -51,6 +54,9 @@ class DahuaOptionsFlowHandler(config_entries.OptionsFlow):
                 "username": user_input["username"],
                 "password": user_input["password"],
                 "channels": user_input["channels"],
+                "rtsp_port": user_input["rtsp_port"],
+                "rtsp_subtype": user_input["rtsp_subtype"],
+                "rtsp_snapshot_channels": user_input["rtsp_snapshot_channels"],
             }
             self.hass.config_entries.async_update_entry(self.config_entry, data=new_data)
 
@@ -71,6 +77,9 @@ class DahuaOptionsFlowHandler(config_entries.OptionsFlow):
                 vol.Required("username", default=data.get("username", "")): str,
                 vol.Required("password", default=data.get("password", "")): str,
                 vol.Required("channels", default=data.get("channels", 1)): vol.All(vol.Coerce(int), vol.Range(min=1, max=256)),
+                vol.Optional("rtsp_port", default=options.get("rtsp_port", data.get("rtsp_port", 554))): vol.All(vol.Coerce(int), vol.Range(min=1, max=65535)),
+                vol.Optional("rtsp_subtype", default=options.get("rtsp_subtype", data.get("rtsp_subtype", 0))): vol.In([0, 1]),
+                vol.Optional("rtsp_snapshot_channels", default=options.get("rtsp_snapshot_channels", data.get("rtsp_snapshot_channels", ""))): str,
                 vol.Optional("connect_timeout", default=options.get("connect_timeout", 10)): vol.All(vol.Coerce(int), vol.Range(min=5, max=120)),
                 vol.Optional("read_timeout", default=options.get("read_timeout", 60)): vol.All(vol.Coerce(int), vol.Range(min=5, max=300)),
                 vol.Optional("idle_reconnect_seconds", default=options.get("idle_reconnect_seconds", 120)): vol.All(vol.Coerce(int), vol.Range(min=30, max=600)),

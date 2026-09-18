@@ -1,6 +1,6 @@
 # Dahua Event Listener
 
-**Versione componente: 1.4.7**
+**Versione componente: 1.5.0**
 
 ![Logo](logo.png)
 
@@ -48,6 +48,9 @@ Puoi modificare:
 - `read_timeout`
 - `idle_reconnect_seconds`
 - `reconnect_delay`
+- `rtsp_port` (porta RTSP, normalmente `554`)
+- `rtsp_subtype` (`0` main stream, `1` substream)
+- `rtsp_snapshot_channels` (canali separati da virgola che devono usare RTSP per le immagini, ad esempio `7,14`)
 
 ## Entita create
 ### Sensori
@@ -73,7 +76,7 @@ Puoi modificare:
 - Camera statica per ogni canale configurato
 
 ## Note importanti
-- Le camere sono snapshot, non stream RTSP.
+- Le camere statiche espongono anche il live RTSP. I canali elencati in `rtsp_snapshot_channels` usano il flusso RTSP anche per generare l'immagine statica tramite Home Assistant.
 - Per applicare modifiche alle opzioni, ricarica l'integrazione o riavvia Home Assistant.
 
 ## Roadmap

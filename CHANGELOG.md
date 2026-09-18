@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-09-18
+- Aggiunto streaming RTSP alle camere statiche.
+- Aggiunta generazione selettiva delle immagini da RTSP per i canali configurati, senza modificare gli snapshot HTTP degli altri canali.
+- Aggiunte opzioni per porta RTSP, main/substream e lista canali RTSP.
+- Le credenziali RTSP vengono lette dalla configurazione e codificate correttamente nell'URL.
+
 ## [1.4.7] - 2026-09-18
 - Ripristinata l'implementazione snapshot stabile dopo la regressione introdotta nella versione 1.4.6.
 
