@@ -89,7 +89,7 @@ class DahuaRuleSnapshotCamera(DahuaSnapshotCamera):
         }
 
 
-class DahuaStaticChannelCamera(DahuaEntity, Camera):
+class DahuaStaticChannelCamera(Camera):
     """Snapshot statico da un canale specifico (CH1, CH2, ecc.)."""
     def __init__(
         self,
@@ -105,8 +105,10 @@ class DahuaStaticChannelCamera(DahuaEntity, Camera):
         rtsp_subtype: int,
         enable_rtsp: bool,
     ):
-        Camera.__init__(self)
-        DahuaEntity.__init__(self, coordinator, entry_id, name, unique_id)
+        super().__init__()
+        self._attr_name = name
+        self._attr_unique_id = unique_id
+        self._attr_should_poll = False
         self._username = username
         self._password = password
         self._host = host

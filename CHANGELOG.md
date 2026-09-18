@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.6.1] - 2026-09-18
+- Le camere statiche HTTP/RTSP non ricevono più aggiornamenti inutili a ogni evento Dahua.
+- La Rule viene pubblicata immediatamente e lo snapshot viene acquisito in background senza bloccare lo stream eventi.
+- Una foto lenta di una Rule precedente non può più sovrascrivere la foto di una Rule successiva.
+
 ## [1.6.0] - 2026-09-18
 - Create due entita distinte per ogni canale: snapshot HTTP normale e camera RTSP.
 - Le entita snapshot HTTP continuano ad acquisire una nuova immagine a ogni richiesta.

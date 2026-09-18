@@ -16,6 +16,63 @@ from .coordinator import DahuaDataCoordinator
 _LOGGER = logging.getLogger(__name__)
 
 
+def fetch_rule_snapshot(
+    host: str,
+    username: str,
+    password: str,
+    channel: int,
+    connect_timeout: int,
+) -> bytes | None:
+    """Acquisisce la foto Rule senza bloccare il listener eventi."""
+    snapshot_url = (
+        f"http://{host}/cgi-bin/snapshot.cgi?channel={channel}&stream=0"
+    )
+    try:
+        response = requests.get(
+            snapshot_url,
+            auth=HTTPDigestAuth(username, password),
+            timeout=(connect_timeout, 10),
+        )
+        if response.status_code == 200:
+            return response.content
+        _LOGGER.warning(
+            "Snapshot Rule canale %s fallito: HTTP %s",
+            channel,
+            response.status_code,
+        )
+    except requests.exceptions.RequestException as ex:
+        _LOGGER.warning("Snapshot Rule canale %s fallito: %s", channel, ex)
+    return None
+
+
+async def async_capture_rule_snapshot(
+    hass: HomeAssistant,
+    coordinator: DahuaDataCoordinator,
+    host: str,
+    username: str,
+    password: str,
+    channel: int,
+    connect_timeout: int,
+    generation: int,
+    rule_info: dict,
+) -> None:
+    """Acquisisce in background la foto della Rule più recente."""
+    image = await hass.async_add_executor_job(
+        fetch_rule_snapshot,
+        host,
+        username,
+        password,
+        channel,
+        connect_timeout,
+    )
+    if image is None or coordinator.rule_generation != generation:
+        return
+
+    coordinator.set_rule_snapshot(image, rule_info)
+    hass.bus.async_fire(f"{DOMAIN}_rule_snapshot", rule_info)
+    coordinator.async_set_updated_data(coordinator.data or {})
+
+
 def start_dahua_stream(
     hass: HomeAssistant,
     coordinator: DahuaDataCoordinator,
@@ -135,34 +192,12 @@ def start_dahua_stream(
                                 normalized_rule = str(rule_name).strip().lower() if rule_name is not None else ""
                                 invalid_rules = {"", "unknown", "sconosciuta", "sconosciuto", "unavailable", "none"}
                                 valid_name = normalized_rule not in invalid_rules
-                                snapshot = None
                                 is_rule_start = (
                                     valid_name
                                     and rule_id is not None
                                     and index is not None
                                     and str(action).strip().lower() == "start"
                                 )
-                                if is_rule_start:
-                                    snapshot_url = f"http://{url.split('/')[2]}/cgi-bin/snapshot.cgi?channel={index}&stream=0"
-                                    try:
-                                        snapshot_response = requests.get(
-                                            snapshot_url,
-                                            auth=HTTPDigestAuth(username, password),
-                                            timeout=(connect_timeout, 10),
-                                        )
-                                        if snapshot_response.status_code == 200:
-                                            snapshot = snapshot_response.content
-                                        else:
-                                            _LOGGER.warning(
-                                                "Snapshot regola %s canale %s fallito: HTTP %s",
-                                                rule_name, index, snapshot_response.status_code,
-                                            )
-                                    except requests.exceptions.RequestException as ex:
-                                        _LOGGER.warning(
-                                            "Snapshot regola %s canale %s fallito: %s",
-                                            rule_name, index, ex,
-                                        )
-
                                 _LOGGER.info(
                                     "Evento ricevuto: codice=%s azione=%s indice=%s temperatura=%s",
                                     code, action, index, temperature
@@ -171,7 +206,6 @@ def start_dahua_stream(
                                 last_useful_ts = time.monotonic()
                                 def publish_event(
                                     event_data=coordinator_data,
-                                    image=snapshot,
                                     rule=rule_name,
                                     channel=index,
                                     rule_start=is_rule_start,
@@ -195,12 +229,19 @@ def start_dahua_stream(
                                         "captured_at": time.time(),
                                     }
                                     if rule_start:
-                                        coordinator.set_rule_event(rule_info)
-                                    if image is not None:
-                                        coordinator.set_rule_snapshot(image, rule_info)
-                                        hass.bus.async_fire(
-                                            f"{DOMAIN}_rule_snapshot",
-                                            rule_info,
+                                        generation = coordinator.set_rule_event(rule_info)
+                                        hass.async_create_task(
+                                            async_capture_rule_snapshot(
+                                                hass,
+                                                coordinator,
+                                                url.split("/")[2],
+                                                username,
+                                                password,
+                                                channel,
+                                                connect_timeout,
+                                                generation,
+                                                rule_info,
+                                            )
                                         )
                                     coordinator.async_set_updated_data(event_data)
 
