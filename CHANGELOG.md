@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.4.6] - 2026-09-18
+- Aggiunto fallback automatico dal main stream al substream per gli snapshot che non restituiscono un'immagine valida.
+- Aggiunti controllo del tipo di contenuto e log diagnostici con canale, stream, stato HTTP e dimensione della risposta.
+- Corretto il logger non valido che nascondeva le eccezioni delle camere snapshot.
+
 ## [1.4.5] - 2026-09-17
 - Aggiunta una roadmap pubblica per la possibile integrazione futura di RTSP e registrazioni NVR.
 - Collegato `Constantini21/intelbras_dvr` come progetto tecnico di riferimento, senza introdurre dipendenze o funzionalità non ancora implementate.
