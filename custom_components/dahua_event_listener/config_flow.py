@@ -31,7 +31,10 @@ class DahuaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required("password"): str,
                 vol.Required("channels", default=1): vol.All(vol.Coerce(int), vol.Range(min=1, max=256)),
                 vol.Optional("rtsp_port", default=554): vol.All(vol.Coerce(int), vol.Range(min=1, max=65535)),
-                vol.Optional("rtsp_subtype", default=0): vol.In([0, 1]),
+                vol.Required("rtsp_subtype", default="0"): vol.In({
+                    "0": "0 - Main stream",
+                    "1": "1 - Substream",
+                }),
                 vol.Optional("rtsp_snapshot_channels", default=""): str,
             }),
         )
@@ -78,7 +81,13 @@ class DahuaOptionsFlowHandler(config_entries.OptionsFlow):
                 vol.Required("password", default=data.get("password", "")): str,
                 vol.Required("channels", default=data.get("channels", 1)): vol.All(vol.Coerce(int), vol.Range(min=1, max=256)),
                 vol.Optional("rtsp_port", default=options.get("rtsp_port", data.get("rtsp_port", 554))): vol.All(vol.Coerce(int), vol.Range(min=1, max=65535)),
-                vol.Optional("rtsp_subtype", default=options.get("rtsp_subtype", data.get("rtsp_subtype", 0))): vol.In([0, 1]),
+                vol.Required(
+                    "rtsp_subtype",
+                    default=str(options.get("rtsp_subtype", data.get("rtsp_subtype", "0"))),
+                ): vol.In({
+                    "0": "0 - Main stream",
+                    "1": "1 - Substream",
+                }),
                 vol.Optional("rtsp_snapshot_channels", default=options.get("rtsp_snapshot_channels", data.get("rtsp_snapshot_channels", ""))): str,
                 vol.Optional("connect_timeout", default=options.get("connect_timeout", 10)): vol.All(vol.Coerce(int), vol.Range(min=5, max=120)),
                 vol.Optional("read_timeout", default=options.get("read_timeout", 60)): vol.All(vol.Coerce(int), vol.Range(min=5, max=300)),

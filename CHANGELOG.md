@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-09-18
+- Corretto il salvataggio dell'opzione RTSP subtype: i valori `0` e `1` sono ora selezioni testuali obbligatorie e persistenti.
+
 ## [1.5.0] - 2026-09-18
 - Aggiunto streaming RTSP alle camere statiche.
 - Aggiunta generazione selettiva delle immagini da RTSP per i canali configurati, senza modificare gli snapshot HTTP degli altri canali.
