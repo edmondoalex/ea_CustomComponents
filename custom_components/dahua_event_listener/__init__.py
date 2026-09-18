@@ -12,7 +12,6 @@ from homeassistant.config_entries import ConfigEntry
 
 from .const import DOMAIN
 from .coordinator import DahuaDataCoordinator
-from .snapshot import fetch_dahua_snapshot
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -144,14 +143,25 @@ def start_dahua_stream(
                                     and str(action).strip().lower() == "start"
                                 )
                                 if is_rule_start:
-                                    snapshot = fetch_dahua_snapshot(
-                                        url.split("/")[2],
-                                        username,
-                                        password,
-                                        index,
-                                        connect_timeout,
-                                        10,
-                                    )
+                                    snapshot_url = f"http://{url.split('/')[2]}/cgi-bin/snapshot.cgi?channel={index}&stream=0"
+                                    try:
+                                        snapshot_response = requests.get(
+                                            snapshot_url,
+                                            auth=HTTPDigestAuth(username, password),
+                                            timeout=(connect_timeout, 10),
+                                        )
+                                        if snapshot_response.status_code == 200:
+                                            snapshot = snapshot_response.content
+                                        else:
+                                            _LOGGER.warning(
+                                                "Snapshot regola %s canale %s fallito: HTTP %s",
+                                                rule_name, index, snapshot_response.status_code,
+                                            )
+                                    except requests.exceptions.RequestException as ex:
+                                        _LOGGER.warning(
+                                            "Snapshot regola %s canale %s fallito: %s",
+                                            rule_name, index, ex,
+                                        )
 
                                 _LOGGER.info(
                                     "Evento ricevuto: codice=%s azione=%s indice=%s temperatura=%s",

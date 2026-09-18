@@ -4,7 +4,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN
 from .coordinator import DahuaDataCoordinator, DahuaEntity
-from .snapshot import fetch_dahua_snapshot
+
+import requests
+from requests.auth import HTTPDigestAuth
 
 
 class DahuaSnapshotCamera(DahuaEntity, Camera):
@@ -27,13 +29,22 @@ class DahuaSnapshotCamera(DahuaEntity, Camera):
 
     async def async_camera_image(self, *args, **kwargs):
         channel = self.coordinator.data.get("index") if self.coordinator.data else 1
-        return await self.hass.async_add_executor_job(
-            fetch_dahua_snapshot,
-            self._host,
-            self._username,
-            self._password,
-            channel,
-        )
+        snapshot_url = f"http://{self._host}/cgi-bin/snapshot.cgi?channel={channel}&stream=0"
+
+        def fetch_snapshot():
+            try:
+                response = requests.get(
+                    snapshot_url,
+                    auth=HTTPDigestAuth(self._username, self._password),
+                    timeout=10
+                )
+                if response.status_code == 200:
+                    return response.content
+            except Exception as e:
+                self._logger.error("Errore snapshot (evento index): %s", e)
+            return None
+
+        return await self.hass.async_add_executor_job(fetch_snapshot)
 
     @property
     def name(self):
@@ -97,13 +108,22 @@ class DahuaStaticChannelCamera(DahuaEntity, Camera):
         self._channel = channel
 
     async def async_camera_image(self, *args, **kwargs):
-        return await self.hass.async_add_executor_job(
-            fetch_dahua_snapshot,
-            self._host,
-            self._username,
-            self._password,
-            self._channel,
-        )
+        snapshot_url = f"http://{self._host}/cgi-bin/snapshot.cgi?channel={self._channel}&stream=0"
+
+        def fetch_snapshot():
+            try:
+                response = requests.get(
+                    snapshot_url,
+                    auth=HTTPDigestAuth(self._username, self._password),
+                    timeout=10
+                )
+                if response.status_code == 200:
+                    return response.content
+            except Exception as e:
+                self._logger.error("Errore snapshot canale %s: %s", self._channel, e)
+            return None
+
+        return await self.hass.async_add_executor_job(fetch_snapshot)
 
     @property
     def name(self):
