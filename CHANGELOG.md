@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-09-18
+- Create due entita distinte per ogni canale: snapshot HTTP normale e camera RTSP.
+- Le entita snapshot HTTP continuano ad acquisire una nuova immagine a ogni richiesta.
+- Le entita RTSP espongono live stream e fotogrammi generati da Home Assistant/FFmpeg.
+- Rimossa la selezione dei soli canali RTSP: la coppia di entita viene creata per tutti i canali e per ogni NVR configurato.
+
 ## [1.5.1] - 2026-09-18
 - Corretto il salvataggio dell'opzione RTSP subtype: i valori `0` e `1` sono ora selezioni testuali obbligatorie e persistenti.
 

@@ -35,7 +35,6 @@ class DahuaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     "0": "0 - Main stream",
                     "1": "1 - Substream",
                 }),
-                vol.Optional("rtsp_snapshot_channels", default=""): str,
             }),
         )
 
@@ -59,7 +58,6 @@ class DahuaOptionsFlowHandler(config_entries.OptionsFlow):
                 "channels": user_input["channels"],
                 "rtsp_port": user_input["rtsp_port"],
                 "rtsp_subtype": user_input["rtsp_subtype"],
-                "rtsp_snapshot_channels": user_input["rtsp_snapshot_channels"],
             }
             self.hass.config_entries.async_update_entry(self.config_entry, data=new_data)
 
@@ -88,7 +86,6 @@ class DahuaOptionsFlowHandler(config_entries.OptionsFlow):
                     "0": "0 - Main stream",
                     "1": "1 - Substream",
                 }),
-                vol.Optional("rtsp_snapshot_channels", default=options.get("rtsp_snapshot_channels", data.get("rtsp_snapshot_channels", ""))): str,
                 vol.Optional("connect_timeout", default=options.get("connect_timeout", 10)): vol.All(vol.Coerce(int), vol.Range(min=5, max=120)),
                 vol.Optional("read_timeout", default=options.get("read_timeout", 60)): vol.All(vol.Coerce(int), vol.Range(min=5, max=300)),
                 vol.Optional("idle_reconnect_seconds", default=options.get("idle_reconnect_seconds", 120)): vol.All(vol.Coerce(int), vol.Range(min=30, max=600)),

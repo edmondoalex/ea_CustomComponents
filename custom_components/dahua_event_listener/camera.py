@@ -103,7 +103,7 @@ class DahuaStaticChannelCamera(DahuaEntity, Camera):
         channel: int,
         rtsp_port: int,
         rtsp_subtype: int,
-        use_rtsp_for_stills: bool,
+        enable_rtsp: bool,
     ):
         Camera.__init__(self)
         DahuaEntity.__init__(self, coordinator, entry_id, name, unique_id)
@@ -113,7 +113,7 @@ class DahuaStaticChannelCamera(DahuaEntity, Camera):
         self._channel = channel
         self._rtsp_port = rtsp_port
         self._rtsp_subtype = rtsp_subtype
-        self._use_rtsp_for_stills = use_rtsp_for_stills
+        self._enable_rtsp = enable_rtsp
 
     async def async_camera_image(self, *args, **kwargs):
         snapshot_url = f"http://{self._host}/cgi-bin/snapshot.cgi?channel={self._channel}&stream=0"
@@ -143,12 +143,16 @@ class DahuaStaticChannelCamera(DahuaEntity, Camera):
 
     @property
     def supported_features(self):
-        return CameraEntityFeature.STREAM
+        return (
+            CameraEntityFeature.STREAM
+            if self._enable_rtsp
+            else CameraEntityFeature(0)
+        )
 
     @property
     def use_stream_for_stills(self) -> bool:
         """Usa RTSP per le immagini solo sui canali configurati."""
-        return self._use_rtsp_for_stills
+        return self._enable_rtsp
 
     async def async_get_supported_features(self) -> int:
         return self.supported_features
@@ -167,25 +171,9 @@ class DahuaStaticChannelCamera(DahuaEntity, Camera):
     def extra_state_attributes(self):
         return {
             "Canale fisso": self._channel,
-            "RTSP per snapshot": self._use_rtsp_for_stills,
+            "Modalita": "RTSP" if self._enable_rtsp else "Snapshot HTTP",
             "RTSP subtype": self._rtsp_subtype,
         }
-
-
-def parse_channel_list(value: str, max_channel: int) -> set[int]:
-    """Converte una lista tipo '7,14' in un insieme di canali validi."""
-    channels = set()
-    for item in str(value or "").split(","):
-        item = item.strip()
-        if not item:
-            continue
-        try:
-            channel = int(item)
-        except ValueError:
-            continue
-        if 1 <= channel <= max_channel:
-            channels.add(channel)
-    return channels
 
 
 async def async_setup_entry(
@@ -204,13 +192,6 @@ async def async_setup_entry(
     options = entry.options or {}
     rtsp_port = int(options.get("rtsp_port", data.get("rtsp_port", 554)))
     rtsp_subtype = int(options.get("rtsp_subtype", data.get("rtsp_subtype", 0)))
-    rtsp_snapshot_channels = parse_channel_list(
-        options.get(
-            "rtsp_snapshot_channels",
-            data.get("rtsp_snapshot_channels", ""),
-        ),
-        num_channels,
-    )
 
     entities = []
 
@@ -240,7 +221,7 @@ async def async_setup_entry(
         )
     )
 
-    # Entita statiche per ogni canale
+    # Due entita' distinte per ogni canale: snapshot HTTP e RTSP.
     for ch in range(1, num_channels + 1):
         entities.append(
             DahuaStaticChannelCamera(
@@ -254,7 +235,22 @@ async def async_setup_entry(
                 channel=ch,
                 rtsp_port=rtsp_port,
                 rtsp_subtype=rtsp_subtype,
-                use_rtsp_for_stills=ch in rtsp_snapshot_channels,
+                enable_rtsp=False,
+            )
+        )
+        entities.append(
+            DahuaStaticChannelCamera(
+                coordinator=coordinator,
+                entry_id=entry.entry_id,
+                name=f"{name} RTSP CH{ch}",
+                unique_id=f"{entry.entry_id}_camera_rtsp_ch{ch}",
+                username=user,
+                password=pwd,
+                host=host,
+                channel=ch,
+                rtsp_port=rtsp_port,
+                rtsp_subtype=rtsp_subtype,
+                enable_rtsp=True,
             )
         )
 
