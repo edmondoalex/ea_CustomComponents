@@ -1,7 +1,6 @@
 {
   "name": "Dahua Event Listener",
   "content_in_root": false,
-  "domain": ["dahua_event_listener"],
   "country": "IT",
   "homeassistant": "2024.1.0",
   "render_readme": true

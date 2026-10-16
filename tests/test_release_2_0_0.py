@@ -115,15 +115,15 @@ def test_manifest_license_and_original_assets_are_release_ready():
     assert manifest == {
         "domain": "dahua_event_listener",
         "name": "Dahua Integration",
-        "version": "2.0.0",
-        "documentation": "https://github.com/edmondoalex/ea_CustomComponents",
-        "dependencies": ["stream"],
         "codeowners": ["@lucaed3001"],
-        "requirements": [],
         "config_flow": True,
+        "dependencies": ["stream"],
+        "documentation": "https://github.com/edmondoalex/ea_CustomComponents",
         "integration_type": "hub",
         "iot_class": "local_push",
         "issue_tracker": "https://github.com/edmondoalex/ea_CustomComponents/issues",
+        "requirements": [],
+        "version": "2.0.0",
     }
     assert (ROOT / "LICENSE").read_text(encoding="utf-8").strip()
     assert not (ROOT / "manifest.json").exists()
