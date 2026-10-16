@@ -3,7 +3,6 @@
   "content_in_root": false,
   "domain": ["dahua_event_listener"],
   "country": "IT",
-  "homeassistant": "2023.0.0",
-  "render_readme": true,
-  "filename": "logo.png"
+  "homeassistant": "2024.1.0",
+  "render_readme": true
 }

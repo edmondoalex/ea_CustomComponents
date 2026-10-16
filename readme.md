@@ -1,6 +1,6 @@
 # Dahua Event Listener
 
-**Versione componente: 1.6.1**
+**Versione componente: 2.0.0**
 
 ![Logo](logo.png)
 

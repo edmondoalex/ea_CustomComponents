@@ -183,7 +183,7 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback
 ):
-    data = entry.data
+    data = {**entry.data, **(entry.options or {})}
     coordinator: DahuaDataCoordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
 
     name = data["name"]
@@ -191,9 +191,8 @@ async def async_setup_entry(
     user = data["username"]
     pwd = data["password"]
     num_channels = data.get("channels", 1)  # valore aggiunto in config_flow.py
-    options = entry.options or {}
-    rtsp_port = int(options.get("rtsp_port", data.get("rtsp_port", 554)))
-    rtsp_subtype = int(options.get("rtsp_subtype", data.get("rtsp_subtype", 0)))
+    rtsp_port = int(data.get("rtsp_port", 554))
+    rtsp_subtype = int(data.get("rtsp_subtype", 0))
 
     entities = []
 

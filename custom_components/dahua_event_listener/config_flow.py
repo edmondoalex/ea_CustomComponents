@@ -46,7 +46,7 @@ class DahuaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class DahuaOptionsFlowHandler(config_entries.OptionsFlow):
-    """Gestione delle opzioni (non implementata, placeholder)."""
+    """Gestione delle opzioni con aggiornamento atomico dei dati sensibili."""
 
     async def async_step_init(self, user_input=None):
         if user_input is not None:

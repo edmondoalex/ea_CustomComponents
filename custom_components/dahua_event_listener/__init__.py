@@ -1,8 +1,10 @@
 import logging
+import asyncio
 import json
 import time
 import random
 import threading
+from typing import Any
 import requests
 from requests.auth import HTTPDigestAuth
 
@@ -84,6 +86,8 @@ def start_dahua_stream(
     read_timeout: int,
     connect_timeout: int,
     idle_reconnect_seconds: int,
+    response_slot: dict,
+    response_lock: threading.Lock,
 ):
     """Avvia il listener eventi Dahua con reconnect e stop pulito."""
     reconnect_delay = max(1, int(reconnect_delay))
@@ -101,160 +105,167 @@ def start_dahua_stream(
                 stream=True,
                 timeout=(connect_timeout, read_timeout),
             ) as response:
-                buffer = []
-                last_data_ts = time.monotonic()
-                last_useful_ts = time.monotonic()
-
-                for line_bytes in response.iter_lines():
-                    if stop_event.is_set():
-                        break
-
-                    if not line_bytes:
-                        if time.monotonic() - last_data_ts > idle_reconnect_seconds:
-                            _LOGGER.warning("Nessun evento da %ss, reconnessione stream", idle_reconnect_seconds)
-                            break
-                        continue
-
+                with response_lock:
+                    response_slot["response"] = response
+                try:
+                    buffer = []
                     last_data_ts = time.monotonic()
-                    line = line_bytes.decode("utf-8", errors="ignore").strip()
+                    last_useful_ts = time.monotonic()
 
-                    if line.startswith("--"):
-                        if buffer:
-                            block = "\n".join(buffer)
-                            buffer.clear()
+                    for line_bytes in response.iter_lines():
+                        if stop_event.is_set():
+                            break
 
-                            if "Heartbeat" in block:
-                                continue
+                        if not line_bytes:
+                            if time.monotonic() - last_data_ts > idle_reconnect_seconds:
+                                _LOGGER.warning("Nessun evento da %ss, reconnessione stream", idle_reconnect_seconds)
+                                break
+                            continue
 
-                            try:
-                                if "data=" not in block:
-                                    # Alcuni Dahua inviano eventi senza payload JSON.
-                                    # In questo caso estraiamo almeno Code/action/index dagli header.
-                                    headers = block
-                                    data = {}
-                                else:
-                                    headers, body = block.split("data=", 1)
-                                    data = json.loads(body.strip())
+                        last_data_ts = time.monotonic()
+                        line = line_bytes.decode("utf-8", errors="ignore").strip()
 
-                                _LOGGER.debug("Blocco ricevuto:\n%s", block)
-                                _LOGGER.debug("Headers: %s", headers)
-                                if data:
-                                    _LOGGER.debug("Body JSON:\n%s", json.dumps(data, indent=2))
+                        if line.startswith("--"):
+                            if buffer:
+                                block = "\n".join(buffer)
+                                buffer.clear()
 
-                                code = ""
-                                action = ""
-                                index = None
-
-                                header_lines = headers.strip().split("\n")[1:] if "Content-Length" in headers else headers.strip().split("\n")
-
-                                for line in header_lines:
-                                    for part in line.replace("\r", "").split(";"):
-                                        if part.startswith("Code="):
-                                            code = part.split("=", 1)[1]
-                                        elif part.startswith("action="):
-                                            action = part.split("=", 1)[1]
-                                        elif part.startswith("index="):
-                                            try:
-                                                index = int(part.split("=", 1)[1]) + 1
-                                            except ValueError:
-                                                index = None
-
-                                code = code or data.get("Event", "")
-
-                                if code == "RtspSessionDisconnect":
+                                if "Heartbeat" in block:
                                     continue
 
-                                temperature = None
-                                if data:
-                                    try:
-                                        info = data.get("Info", [{}])[0]
-                                        temperature = info.get("Temperature")
-                                    except Exception as ex:
-                                        _LOGGER.debug("Nessuna temperatura o parsing fallito: %s", ex)
+                                try:
+                                    if "data=" not in block:
+                                        # Alcuni Dahua inviano eventi senza payload JSON.
+                                        # In questo caso estraiamo almeno Code/action/index dagli header.
+                                        headers = block
+                                        data = {}
+                                    else:
+                                        headers, body = block.split("data=", 1)
+                                        data = json.loads(body.strip())
 
-                                coordinator_data = {
-                                    "code": code,
-                                    "action": action,
-                                    "index": index,
-                                    "data": data,
-                                    "temperature": temperature,
-                                }
+                                    _LOGGER.debug("Blocco ricevuto:\n%s", block)
+                                    _LOGGER.debug("Headers: %s", headers)
+                                    if data:
+                                        _LOGGER.debug("Body JSON:\n%s", json.dumps(data, indent=2))
 
-                                # Acquisisce subito la foto del canale che ha generato
-                                # una regola. La camera dinamica potra' così restituire
-                                # esattamente questa immagine anche se, nel frattempo,
-                                # arriva un evento da un altro canale.
-                                rule_name = data.get("Name") if data else None
-                                rule_id = (
-                                    data.get("RuleId", data.get("RuleID"))
-                                    if data else None
-                                )
-                                normalized_rule = str(rule_name).strip().lower() if rule_name is not None else ""
-                                invalid_rules = {"", "unknown", "sconosciuta", "sconosciuto", "unavailable", "none"}
-                                valid_name = normalized_rule not in invalid_rules
-                                is_rule_start = (
-                                    valid_name
-                                    and rule_id is not None
-                                    and index is not None
-                                    and str(action).strip().lower() == "start"
-                                )
-                                _LOGGER.info(
-                                    "Evento ricevuto: codice=%s azione=%s indice=%s temperatura=%s",
-                                    code, action, index, temperature
-                                )
+                                    code = ""
+                                    action = ""
+                                    index = None
 
-                                last_useful_ts = time.monotonic()
-                                def publish_event(
-                                    event_data=coordinator_data,
-                                    rule=rule_name,
-                                    channel=index,
-                                    rule_start=is_rule_start,
-                                    event_rule_id=rule_id,
-                                    event_code=code,
-                                    event_name_valid=valid_name,
-                                ):
-                                    if (
-                                        event_code == "VideoMotion"
-                                        and channel is not None
-                                        and event_name_valid
-                                    ):
-                                        coordinator.set_camera_name(channel, str(rule))
+                                    header_lines = headers.strip().split("\n")[1:] if "Content-Length" in headers else headers.strip().split("\n")
 
-                                    rule_info = {
-                                        "rule_name": rule,
-                                        "rule_id": event_rule_id,
-                                        "channel": channel,
-                                        "code": event_data["code"],
-                                        "action": event_data["action"],
-                                        "captured_at": time.time(),
+                                    for line in header_lines:
+                                        for part in line.replace("\r", "").split(";"):
+                                            if part.startswith("Code="):
+                                                code = part.split("=", 1)[1]
+                                            elif part.startswith("action="):
+                                                action = part.split("=", 1)[1]
+                                            elif part.startswith("index="):
+                                                try:
+                                                    index = int(part.split("=", 1)[1]) + 1
+                                                except ValueError:
+                                                    index = None
+
+                                    code = code or data.get("Event", "")
+
+                                    if code == "RtspSessionDisconnect":
+                                        continue
+
+                                    temperature = None
+                                    if data:
+                                        try:
+                                            info = data.get("Info", [{}])[0]
+                                            temperature = info.get("Temperature")
+                                        except Exception as ex:
+                                            _LOGGER.debug("Nessuna temperatura o parsing fallito: %s", ex)
+
+                                    coordinator_data = {
+                                        "code": code,
+                                        "action": action,
+                                        "index": index,
+                                        "data": data,
+                                        "temperature": temperature,
                                     }
-                                    if rule_start:
-                                        generation = coordinator.set_rule_event(rule_info)
-                                        hass.async_create_task(
-                                            async_capture_rule_snapshot(
-                                                hass,
-                                                coordinator,
-                                                url.split("/")[2],
-                                                username,
-                                                password,
-                                                channel,
-                                                connect_timeout,
-                                                generation,
-                                                rule_info,
+
+                                    # Acquisisce subito la foto del canale che ha generato
+                                    # una regola. La camera dinamica potra' così restituire
+                                    # esattamente questa immagine anche se, nel frattempo,
+                                    # arriva un evento da un altro canale.
+                                    rule_name = data.get("Name") if data else None
+                                    rule_id = (
+                                        data.get("RuleId", data.get("RuleID"))
+                                        if data else None
+                                    )
+                                    normalized_rule = str(rule_name).strip().lower() if rule_name is not None else ""
+                                    invalid_rules = {"", "unknown", "sconosciuta", "sconosciuto", "unavailable", "none"}
+                                    valid_name = normalized_rule not in invalid_rules
+                                    is_rule_start = (
+                                        valid_name
+                                        and rule_id is not None
+                                        and index is not None
+                                        and str(action).strip().lower() == "start"
+                                    )
+                                    _LOGGER.info(
+                                        "Evento ricevuto: codice=%s azione=%s indice=%s temperatura=%s",
+                                        code, action, index, temperature
+                                    )
+
+                                    last_useful_ts = time.monotonic()
+                                    def publish_event(
+                                        event_data=coordinator_data,
+                                        rule=rule_name,
+                                        channel=index,
+                                        rule_start=is_rule_start,
+                                        event_rule_id=rule_id,
+                                        event_code=code,
+                                        event_name_valid=valid_name,
+                                    ):
+                                        if (
+                                            event_code == "VideoMotion"
+                                            and channel is not None
+                                            and event_name_valid
+                                        ):
+                                            coordinator.set_camera_name(channel, str(rule))
+
+                                        rule_info = {
+                                            "rule_name": rule,
+                                            "rule_id": event_rule_id,
+                                            "channel": channel,
+                                            "code": event_data["code"],
+                                            "action": event_data["action"],
+                                            "captured_at": time.time(),
+                                        }
+                                        if rule_start:
+                                            generation = coordinator.set_rule_event(rule_info)
+                                            hass.async_create_task(
+                                                async_capture_rule_snapshot(
+                                                    hass,
+                                                    coordinator,
+                                                    url.split("/")[2],
+                                                    username,
+                                                    password,
+                                                    channel,
+                                                    connect_timeout,
+                                                    generation,
+                                                    rule_info,
+                                                )
                                             )
-                                        )
-                                    coordinator.async_set_updated_data(event_data)
+                                        coordinator.async_set_updated_data(event_data)
 
-                                hass.loop.call_soon_threadsafe(publish_event)
+                                    hass.loop.call_soon_threadsafe(publish_event)
 
-                            except Exception as e:
-                                _LOGGER.exception("Errore parsing evento Dahua: %s", e)
-                    else:
-                        buffer.append(line)
+                                except Exception as e:
+                                    _LOGGER.exception("Errore parsing evento Dahua: %s", e)
+                        else:
+                            buffer.append(line)
 
-                    if time.monotonic() - last_useful_ts > (idle_reconnect_seconds * 3):
-                        _LOGGER.warning("Eventi non utili da %ss, reconnessione stream", idle_reconnect_seconds * 3)
-                        break
+                            if time.monotonic() - last_useful_ts > (idle_reconnect_seconds * 3):
+                                _LOGGER.warning("Eventi non utili da %ss, reconnessione stream", idle_reconnect_seconds * 3)
+                                break
+                finally:
+                    with response_lock:
+                        if response_slot.get("response") is response:
+                            response_slot.pop("response", None)
 
         except requests.exceptions.ReadTimeout:
             _LOGGER.warning("Timeout lettura stream Dahua, riconnessione")
@@ -283,10 +294,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Setup dell'integrazione da UI."""
     hass.data.setdefault(DOMAIN, {})
 
-    host = entry.data["host"]
-    user = entry.data["username"]
-    pwd = entry.data["password"]
-    name = entry.data["name"]
+    settings = {**entry.data, **(entry.options or {})}
+    host = settings["host"]
+    user = settings["username"]
+    pwd = settings["password"]
+    name = settings["name"]
 
     url = f"http://{host}/cgi-bin/eventManager.cgi?action=attach&codes=[All]&heartbeat=5"
 
@@ -294,22 +306,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     coordinator = DahuaDataCoordinator(hass, entry.entry_id)
     stop_event = threading.Event()
-    options = entry.options or {}
-    reconnect_delay = int(options.get("reconnect_delay", 5))
-    read_timeout = int(options.get("read_timeout", 60))
-    connect_timeout = int(options.get("connect_timeout", 10))
-    idle_reconnect_seconds = int(options.get("idle_reconnect_seconds", 120))
+    response_slot: dict[str, Any] = {}
+    response_lock = threading.Lock()
+    reconnect_delay = int(settings.get("reconnect_delay", 5))
+    read_timeout = int(settings.get("read_timeout", 60))
+    connect_timeout = int(settings.get("connect_timeout", 10))
+    idle_reconnect_seconds = int(settings.get("idle_reconnect_seconds", 120))
     hass.data[DOMAIN][entry.entry_id] = {
         "coordinator": coordinator,
         "name": name,
         "stop_event": stop_event,
+        "response_slot": response_slot,
+        "response_lock": response_lock,
         "reconnect_delay": reconnect_delay,
         "read_timeout": read_timeout,
         "connect_timeout": connect_timeout,
         "idle_reconnect_seconds": idle_reconnect_seconds,
     }
 
-    hass.async_add_executor_job(
+    worker = hass.async_add_executor_job(
         start_dahua_stream,
         hass,
         coordinator,
@@ -321,16 +336,37 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         read_timeout,
         connect_timeout,
         idle_reconnect_seconds,
+        response_slot,
+        response_lock,
     )
+    hass.data[DOMAIN][entry.entry_id]["worker"] = worker
 
     await hass.config_entries.async_forward_entry_setups(entry, ["sensor", "camera"])
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload one entry without affecting listeners owned by other entries."""
+    domain_data: dict[str, Any] = hass.data.get(DOMAIN, {})
+    entry_data = domain_data.get(entry.entry_id)
+    if entry_data is None:
+        return True
+
     unload_ok = await hass.config_entries.async_unload_platforms(entry, ["sensor", "camera"])
     if unload_ok:
-        entry_data = hass.data[DOMAIN].pop(entry.entry_id, None)
-        if entry_data and entry_data.get("stop_event"):
-            entry_data["stop_event"].set()
+        entry_data["stop_event"].set()
+        with entry_data["response_lock"]:
+            response = entry_data["response_slot"].get("response")
+        if response is not None:
+            await hass.async_add_executor_job(response.close)
+        worker = entry_data.get("worker")
+        if worker is not None:
+            try:
+                await asyncio.wait_for(asyncio.shield(worker), timeout=5)
+            except asyncio.TimeoutError:
+                _LOGGER.warning("Listener Dahua ancora in chiusura per entry %s", entry.entry_id)
+                return False
+        domain_data.pop(entry.entry_id, None)
+        if not domain_data:
+            hass.data.pop(DOMAIN, None)
     return unload_ok
